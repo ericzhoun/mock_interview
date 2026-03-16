@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calico Mock Interview — Senior Data Engineer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal: #0F6E56;
+    --teal-light: #1D9E75;
+    --teal-bg: #E1F5EE;
+    --teal-subtle: #9FE1CB;
+    --text: #2C2C2A;
+    --text-muted: #5F5E5A;
+    --text-faint: #888780;
+    --border: rgba(0,0,0,0.1);
+    --border-med: rgba(0,0,0,0.2);
+    --surface: #fff;
+    --page: #F7F7F5;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --serif: 'Instrument Serif', serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--page);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .app { max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  .header { margin-bottom: 2.5rem; }
+  .company-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+    color: var(--teal); background: var(--teal-bg);
+    padding: 4px 10px; border-radius: 4px; margin-bottom: 1rem;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal-light); display: inline-block; }
+  h1 { font-family: var(--serif); font-size: 28px; font-weight: 400; line-height: 1.25; color: var(--text); margin-bottom: 0.4rem; }
+  h1 em { font-style: italic; color: var(--teal); }
+  .subtitle { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+  .jd-card {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;
+  }
+  .jd-card h3 { font-size: 12px; font-family: var(--mono); color: var(--text-faint); letter-spacing: 0.06em; margin-bottom: 0.75rem; }
+  .jd-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 12px; padding: 3px 9px; border-radius: 4px; border: 0.5px solid var(--border-med); color: var(--text-muted); font-family: var(--mono); }
+  .chip.green { background: var(--teal-bg); color: var(--teal); border-color: var(--teal-subtle); }
+
+  .progress-bar { display: flex; align-items: center; gap: 0; margin-bottom: 2rem; }
+  .prog-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
+  .prog-step:not(:last-child)::after { content: ''; position: absolute; top: 10px; left: 50%; right: -50%; height: 1px; background: var(--border); }
+  .prog-step.done::after { background: var(--teal-subtle); }
+  .prog-dot { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border-med); background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 9px; font-family: var(--mono); color: var(--text-faint); position: relative; z-index: 1; }
+  .prog-step.done .prog-dot { background: var(--teal); border-color: var(--teal); color: white; }
+  .prog-step.active .prog-dot { border-color: var(--teal); color: var(--teal); background: var(--teal-bg); }
+  .prog-label { font-size: 10px; color: var(--text-faint); font-family: var(--mono); text-align: center; }
+  .prog-step.active .prog-label { color: var(--teal); }
+
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; padding: 1.75rem; margin-bottom: 1rem; }
+
+  .q-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .q-label { font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.06em; }
+  .q-badge { font-family: var(--mono); font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--teal-bg); color: var(--teal); }
+
+  .q-text { font-size: 17px; line-height: 1.6; color: var(--text); font-family: var(--serif); margin-bottom: 1.5rem; }
+
+  .tip-box { background: var(--page); border: 0.5px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.5; }
+  .tip-box strong { color: var(--text); font-weight: 500; }
+
+  textarea { width: 100%; min-height: 140px; border: 0.5px solid var(--border-med); border-radius: 8px; padding: 0.875rem 1rem; font-family: var(--sans); font-size: 15px; line-height: 1.6; color: var(--text); background: var(--surface); resize: vertical; transition: border-color 0.15s; }
+  textarea:focus { outline: none; border-color: var(--teal); }
+  textarea::placeholder { color: var(--text-faint); }
+
+  input[type="password"], input[type="text"] { width: 100%; border: 0.5px solid var(--border-med); border-radius: 8px; padding: 0.75rem 1rem; font-family: var(--mono); font-size: 14px; color: var(--text); background: var(--surface); transition: border-color 0.15s; }
+  input:focus { outline: none; border-color: var(--teal); }
+
+  .char-count { font-size: 12px; color: var(--text-faint); font-family: var(--mono); text-align: right; margin-top: 4px; }
+
+  .btn-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 1rem; }
+  .btn { font-family: var(--sans); font-size: 14px; font-weight: 500; padding: 9px 20px; border-radius: 8px; cursor: pointer; border: 0.5px solid var(--border-med); background: var(--surface); color: var(--text); transition: all 0.15s; }
+  .btn:hover { background: var(--page); }
+  .btn.primary { background: var(--teal); color: white; border-color: var(--teal); }
+  .btn.primary:hover { background: var(--teal-light); border-color: var(--teal-light); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-lg { font-size: 15px; padding: 12px 28px; border-radius: 10px; }
+
+  .feedback-card { border-radius: 12px; overflow: hidden; margin-bottom: 1rem; }
+  .feedback-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 0.5px solid var(--border); }
+  .score-badge { font-family: var(--mono); font-size: 13px; font-weight: 500; padding: 4px 12px; border-radius: 20px; }
+  .score-high { background: var(--teal-bg); color: var(--teal); }
+  .score-mid { background: #FAEEDA; color: #854F0B; }
+  .score-low { background: #FCEBEB; color: #A32D2D; }
+  .feedback-body { padding: 1.25rem; }
+  .feedback-section { margin-bottom: 1rem; }
+  .feedback-section:last-child { margin-bottom: 0; }
+  .fb-label { font-size: 11px; font-family: var(--mono); color: var(--text-faint); letter-spacing: 0.06em; margin-bottom: 0.4rem; }
+  .fb-text { font-size: 14px; line-height: 1.65; color: var(--text-muted); }
+  .strength-item, .improve-item { display: flex; gap: 8px; margin-bottom: 0.4rem; font-size: 14px; }
+  .strength-item::before { content: '+'; color: var(--teal); font-family: var(--mono); font-weight: 500; flex-shrink: 0; }
+  .improve-item::before { content: '→'; color: #BA7517; font-family: var(--mono); font-weight: 500; flex-shrink: 0; }
+
+  .loading-dots { display: flex; gap: 6px; align-items: center; }
+  .loading-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: pulse 1.2s infinite; }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+  .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.5rem; }
+  .result-cell { background: var(--page); border-radius: 8px; padding: 1rem; border: 0.5px solid var(--border); }
+  .result-cell .num { font-size: 26px; font-weight: 500; font-family: var(--mono); color: var(--teal); }
+  .result-cell .lbl { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+
+  .score-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; }
+  .score-row:last-child { border-bottom: none; }
+  .score-bar-wrap { flex: 1; margin: 0 12px; height: 4px; background: var(--page); border-radius: 2px; }
+  .score-bar { height: 100%; border-radius: 2px; background: var(--teal); }
+
+  .start-hero { text-align: center; padding: 1rem 0 2rem; }
+  .start-hero .big-num { font-family: var(--serif); font-size: 72px; color: var(--teal-bg); line-height: 1; margin-bottom: 0.5rem; -webkit-text-stroke: 1px var(--teal-subtle); }
+  .structure-list { text-align: left; margin: 1.5rem auto; max-width: 400px; }
+  .struct-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--border); font-size: 14px; }
+  .struct-num { width: 24px; height: 24px; border-radius: 50%; background: var(--teal-bg); color: var(--teal); font-family: var(--mono); font-size: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .struct-cat { font-weight: 500; color: var(--text); }
+  .struct-desc { font-size: 12px; color: var(--text-faint); }
+
+  /* API key screen */
+  .key-screen { max-width: 480px; margin: 4rem auto; }
+  .key-screen .lock-icon { font-size: 32px; margin-bottom: 1rem; text-align: center; }
+  .key-screen h2 { font-family: var(--serif); font-size: 22px; font-weight: 400; text-align: center; margin-bottom: 0.5rem; }
+  .key-screen p { font-size: 14px; color: var(--text-muted); text-align: center; line-height: 1.6; margin-bottom: 1.5rem; }
+  .key-note { font-size: 12px; color: var(--text-faint); margin-top: 8px; line-height: 1.5; }
+  .key-note a { color: var(--teal); text-decoration: none; }
+  .error-msg { font-size: 12px; color: #A32D2D; margin-top: 6px; display: none; }
+</style>
+</head>
+<body>
+
+<!-- ── API KEY SCREEN ── -->
+<div id="screen-key" class="app">
+  <div class="key-screen card">
+    <div class="lock-icon" style="text-align:center;font-size:28px;margin-bottom:1rem">🔑</div>
+    <h2>Enter your Anthropic API key</h2>
+    <p>This app uses the Claude API to evaluate your answers. Your key is stored in memory only and never sent anywhere except directly to Anthropic.</p>
+    <label style="font-size:12px;font-family:var(--mono);color:var(--text-faint);letter-spacing:0.06em;display:block;margin-bottom:6px">API KEY</label>
+    <input type="password" id="api-key-input" placeholder="sk-ant-api03-…" />
+    <div class="error-msg" id="key-error">Please enter a valid Anthropic API key (starts with sk-ant-)</div>
+    <p class="key-note">Don't have a key? Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>. Usage is pay-as-you-go; each interview costs roughly $0.02.</p>
+    <div class="btn-row" style="justify-content:center;margin-top:1.25rem">
+      <button class="btn primary btn-lg" onclick="saveKey()">Start interview →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div id="screen-app" style="display:none">
+  <div class="app">
+    <div class="header">
+      <div class="company-tag"><span class="dot"></span> CALICO LIFE SCIENCES · ALPHABET</div>
+      <h1>Mock Interview: <em>Senior Data Engineer</em></h1>
+      <p class="subtitle">Drug Discovery Data Engineering · South San Francisco, CA · Founding role</p>
+    </div>
+
+    <div class="jd-card">
+      <h3>KEY REQUIREMENTS FROM JD</h3>
+      <div class="jd-chips">
+        <span class="chip green">Python</span>
+        <span class="chip green">GCP / BigQuery</span>
+        <span class="chip green">FastAPI</span>
+        <span class="chip green">React</span>
+        <span class="chip green">Kubernetes</span>
+        <span class="chip green">Terraform</span>
+        <span class="chip green">CDD Vault</span>
+        <span class="chip green">Benchling ELN</span>
+        <span class="chip green">Titian Mosaic</span>
+        <span class="chip">5+ yrs pharma informatics</span>
+        <span class="chip">CI/CD · IaC</span>
+        <span class="chip">Mentorship & leadership</span>
+        <span class="chip">Drug discovery domain</span>
+      </div>
+    </div>
+
+    <div id="screen-start">
+      <div class="card start-hero">
+        <div class="big-num">5</div>
+        <p style="font-family:var(--serif);font-size:20px;color:var(--text);margin-bottom:0.5rem">Questions across 5 dimensions</p>
+        <p style="font-size:14px;color:var(--text-muted)">AI-powered feedback tailored to the Calico JD after each answer.</p>
+        <div class="structure-list">
+          <div class="struct-item"><div class="struct-num">1</div><div><div class="struct-cat">Technical depth</div><div class="struct-desc">Python, data pipelines, GCP / BigQuery</div></div></div>
+          <div class="struct-item"><div class="struct-num">2</div><div><div class="struct-cat">Domain knowledge</div><div class="struct-desc">Pharma informatics: CDD Vault, Benchling, Mosaic</div></div></div>
+          <div class="struct-item"><div class="struct-num">3</div><div><div class="struct-cat">System design</div><div class="struct-desc">Data flow architecture across ML → biology → assay</div></div></div>
+          <div class="struct-item"><div class="struct-num">4</div><div><div class="struct-cat">Behavioral / leadership</div><div class="struct-desc">Founding member, mentorship, cross-functional bridge</div></div></div>
+          <div class="struct-item" style="border-bottom:none"><div class="struct-num">5</div><div><div class="struct-cat">Motivation & culture</div><div class="struct-desc">Calico mission, autonomy, 90-day vision</div></div></div>
+        </div>
+        <button class="btn primary btn-lg" onclick="startInterview()">Begin Interview →</button>
+      </div>
+    </div>
+
+    <div id="screen-interview" style="display:none">
+      <div class="progress-bar" id="progress"></div>
+      <div class="card" id="question-card">
+        <div class="q-meta">
+          <span class="q-label" id="q-label">QUESTION 1 OF 5</span>
+          <span class="q-badge" id="q-category">TECHNICAL</span>
+        </div>
+        <p class="q-text" id="q-text"></p>
+        <div class="tip-box" id="q-tip"></div>
+        <textarea id="answer-input" placeholder="Type your answer here…" oninput="updateCount()"></textarea>
+        <div class="char-count"><span id="char-count">0</span> words</div>
+        <div class="btn-row">
+          <button class="btn" onclick="skipQuestion()">Skip</button>
+          <button class="btn primary" id="submit-btn" onclick="submitAnswer()">Submit answer →</button>
+        </div>
+      </div>
+      <div id="feedback-area"></div>
+    </div>
+
+    <div id="screen-results" style="display:none">
+      <div class="card">
+        <div class="q-meta">
+          <span class="q-label">INTERVIEW COMPLETE</span>
+          <span class="q-badge" id="overall-grade">–</span>
+        </div>
+        <div class="results-grid">
+          <div class="result-cell"><div class="num" id="avg-score">–</div><div class="lbl">Average score (/ 10)</div></div>
+          <div class="result-cell"><div class="num" id="questions-done">–</div><div class="lbl">Questions answered</div></div>
+        </div>
+        <div id="scores-breakdown"></div>
+        <div class="btn-row" style="margin-top:1.5rem">
+          <button class="btn" onclick="restartInterview()">Restart interview</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let API_KEY = '';
+
+  const QUESTIONS = [
+    {
+      category: "TECHNICAL", badge: "Technical Depth",
+      text: "Walk us through how you would design and implement a Python-based ETL pipeline that ingests assay data from the Benchling API and loads it into BigQuery. What libraries, data modeling decisions, and testing strategies would you apply to ensure the pipeline is production-grade and maintainable?",
+      tip: "<strong>Look for:</strong> airflow / prefect orchestration, pydantic for validation, dbt or raw SQL for transforms, pytest + Great Expectations for testing, incremental loads."
+    },
+    {
+      category: "DOMAIN", badge: "Domain Knowledge",
+      text: "Describe your hands-on experience with laboratory informatics platforms — specifically CDD Vault, Titian Mosaic, or Benchling ELN. How have you integrated these systems into a broader data infrastructure, and what were the most challenging aspects of working with their APIs or data models?",
+      tip: "<strong>Look for:</strong> knowledge of SMILES/compound structures in CDD, sample tracking in Mosaic, Benchling entity schema, rate-limiting challenges, chemical data types."
+    },
+    {
+      category: "SYSTEM DESIGN", badge: "Architecture",
+      text: "Calico needs a seamless data handoff from the Machine Learning team → Protein Sciences → Assay Technologies to accelerate the drug discovery feedback loop. Design this data flow architecture end-to-end. What data contracts, orchestration patterns, messaging systems, or APIs would you introduce?",
+      tip: "<strong>Look for:</strong> schema registries, event-driven vs polling, GCP Pub/Sub or Dataflow, data contracts, observability, handling schema evolution."
+    },
+    {
+      category: "BEHAVIORAL", badge: "Leadership",
+      text: "As the founding member of the Drug Discovery Data Engineering group, you'll be building standards from scratch and eventually mentoring future hires. Tell me about a time you established engineering practices on a new or under-structured team. How did you balance hands-on delivery with setting long-term standards?",
+      tip: "<strong>STAR format:</strong> Situation → Task → Action → Result. Highlight IaC, code review culture, documentation, or CI/CD practices you introduced."
+    },
+    {
+      category: "CULTURE FIT", badge: "Motivation",
+      text: "Calico is an Alphabet-backed company with a unique mission: understanding and combating human aging through science. What draws you to the intersection of data engineering and drug discovery specifically? And given you'd be the founding member of this group, what would your first 90 days look like?",
+      tip: "<strong>Look for:</strong> genuine scientific curiosity, specific mention of aging/longevity interest, concrete 90-day priorities (listening tour, quick wins, process mapping)."
+    }
+  ];
+
+  let currentQ = 0, scores = [], feedbacks = [], isLoading = false;
+
+  function saveKey() {
+    const val = document.getElementById('api-key-input').value.trim();
+    if (!val.startsWith('sk-ant-') && !val.startsWith('sk-')) {
+      document.getElementById('key-error').style.display = 'block';
+      return;
+    }
+    API_KEY = val;
+    document.getElementById('screen-key').style.display = 'none';
+    document.getElementById('screen-app').style.display = 'block';
+  }
+
+  document.getElementById('api-key-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveKey();
+  });
+
+  function renderProgress() {
+    const bar = document.getElementById('progress');
+    const labels = ['Tech','Domain','Design','Leadership','Culture'];
+    bar.innerHTML = QUESTIONS.map((q, i) => {
+      const cls = i < currentQ ? 'done' : i === currentQ ? 'active' : '';
+      return `<div class="prog-step ${cls}">
+        <div class="prog-dot">${i < currentQ ? '✓' : i+1}</div>
+        <div class="prog-label">${labels[i]}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function startInterview() {
+    document.getElementById('screen-start').style.display = 'none';
+    document.getElementById('screen-interview').style.display = 'block';
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    if (currentQ >= QUESTIONS.length) { showResults(); return; }
+    const q = QUESTIONS[currentQ];
+    document.getElementById('q-label').textContent = `QUESTION ${currentQ+1} OF ${QUESTIONS.length}`;
+    document.getElementById('q-category').textContent = q.badge;
+    document.getElementById('q-text').textContent = q.text;
+    document.getElementById('q-tip').innerHTML = q.tip;
+    document.getElementById('answer-input').value = '';
+    document.getElementById('char-count').textContent = '0';
+    document.getElementById('feedback-area').innerHTML = '';
+    document.getElementById('submit-btn').disabled = false;
+    renderProgress();
+  }
+
+  function updateCount() {
+    const words = document.getElementById('answer-input').value.trim().split(/\s+/).filter(w=>w).length;
+    document.getElementById('char-count').textContent = words;
+  }
+
+  function skipQuestion() {
+    scores.push(null); feedbacks.push(null); currentQ++;
+    loadQuestion();
+  }
+
+  async function submitAnswer() {
+    if (isLoading) return;
+    const answer = document.getElementById('answer-input').value.trim();
+    if (answer.length < 20) {
+      document.getElementById('answer-input').style.borderColor = '#E24B4A';
+      setTimeout(() => document.getElementById('answer-input').style.borderColor = '', 1500);
+      return;
+    }
+    isLoading = true;
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('feedback-area').innerHTML = `<div class="card" style="display:flex;align-items:center;gap:12px;padding:1rem 1.25rem">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+      <span style="font-size:14px;color:var(--text-muted)">Evaluating your answer…</span>
+    </div>`;
+
+    const q = QUESTIONS[currentQ];
+    const prompt = `You are a senior hiring manager at Calico Life Sciences interviewing for Senior Data Engineer, Drug Discovery Data Engineering. This is a founding role requiring 5+ years pharma informatics, Python/GCP/BigQuery, FastAPI, React, Kubernetes, Terraform, and hands-on experience with CDD Vault, Benchling ELN, and Titian Mosaic.
+
+Category: ${q.category}
+Question: ${q.text}
+Candidate answer: ${answer}
+
+Return ONLY a JSON object with these exact fields — no markdown, no preamble:
+{"score":<int 1-10>,"summary":"<2-sentence assessment>","strengths":["<s1>","<s2>"],"improvements":["<i1>","<i2>"],"calico_fit":"<1 sentence on fit with Calico drug discovery mission>"}`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-allow-browser': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 600,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      const raw = data.content.map(b => b.text||'').join('');
+      let fb;
+      try { fb = JSON.parse(raw); }
+      catch(e) {
+        const match = raw.match(/\{[\s\S]*\}/);
+        fb = match ? JSON.parse(match[0]) : { score:5, summary:"Could not parse feedback. Try again.", strengths:[], improvements:[], calico_fit:"" };
+      }
+      scores.push(fb.score);
+      feedbacks.push(fb);
+      showFeedback(fb);
+    } catch(e) {
+      document.getElementById('feedback-area').innerHTML = `<div class="card"><p style="font-size:14px;color:#A32D2D">Error: ${e.message}. Check your API key and try again.</p><div class="btn-row"><button class="btn" onclick="document.getElementById('submit-btn').disabled=false;document.getElementById('feedback-area').innerHTML=''">Try again</button></div></div>`;
+    }
+    isLoading = false;
+  }
+
+  function showFeedback(fb) {
+    const sc = fb.score;
+    const scoreClass = sc >= 8 ? 'score-high' : sc >= 5 ? 'score-mid' : 'score-low';
+    const strengths = (fb.strengths||[]).map(s=>`<div class="strength-item">${s}</div>`).join('');
+    const improvements = (fb.improvements||[]).map(s=>`<div class="improve-item">${s}</div>`).join('');
+    document.getElementById('feedback-area').innerHTML = `
+      <div class="card feedback-card">
+        <div class="feedback-header">
+          <span style="font-size:14px;font-weight:500;color:var(--text)">Evaluator feedback</span>
+          <span class="score-badge ${scoreClass}">${sc}/10</span>
+        </div>
+        <div class="feedback-body">
+          <div class="feedback-section"><div class="fb-label">SUMMARY</div><div class="fb-text">${fb.summary}</div></div>
+          ${strengths ? `<div class="feedback-section"><div class="fb-label">STRENGTHS</div>${strengths}</div>` : ''}
+          ${improvements ? `<div class="feedback-section"><div class="fb-label">AREAS TO IMPROVE</div>${improvements}</div>` : ''}
+          ${fb.calico_fit ? `<div class="feedback-section"><div class="fb-label">CALICO FIT</div><div class="fb-text" style="font-style:italic">${fb.calico_fit}</div></div>` : ''}
+        </div>
+      </div>
+      <div class="btn-row">
+        ${currentQ < QUESTIONS.length-1
+          ? `<button class="btn primary" onclick="nextQuestion()">Next question →</button>`
+          : `<button class="btn primary" onclick="showResults()">See full results →</button>`}
+      </div>`;
+  }
+
+  function nextQuestion() { currentQ++; loadQuestion(); }
+
+  function showResults() {
+    document.getElementById('screen-interview').style.display = 'none';
+    document.getElementById('screen-results').style.display = 'block';
+    const valid = scores.filter(s => s !== null);
+    const avg = valid.length ? (valid.reduce((a,b)=>a+b,0)/valid.length).toFixed(1) : '–';
+    document.getElementById('avg-score').textContent = avg;
+    document.getElementById('questions-done').textContent = valid.length + '/' + QUESTIONS.length;
+    const n = parseFloat(avg);
+    document.getElementById('overall-grade').textContent = n >= 8 ? 'STRONG HIRE' : n >= 6 ? 'LIKELY HIRE' : n >= 4 ? 'BORDERLINE' : 'NEEDS WORK';
+    const labels = ['Technical','Domain','System Design','Leadership','Culture'];
+    document.getElementById('scores-breakdown').innerHTML = scores.map((s, i) => {
+      const pct = s ? (s/10*100) : 0;
+      return `<div class="score-row">
+        <span style="font-size:12px;font-family:var(--mono);color:var(--text-muted);width:90px;flex-shrink:0">${labels[i]}</span>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:${pct}%"></div></div>
+        <span style="font-size:12px;font-family:var(--mono);color:${s>=8?'var(--teal)':s>=5?'#BA7517':'#A32D2D'};width:30px;text-align:right">${s !== null ? s+'/10' : 'skip'}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function restartInterview() {
+    currentQ = 0; scores = []; feedbacks = []; isLoading = false;
+    document.getElementById('screen-results').style.display = 'none';
+    document.getElementById('screen-start').style.display = 'block';
+  }
+</script>
+</body>
+</html>
