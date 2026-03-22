@@ -74,8 +74,11 @@
 
   .q-text { font-size: 17px; line-height: 1.6; color: var(--text); font-family: var(--serif); margin-bottom: 1.5rem; }
 
-  .tip-box { background: var(--page); border: 0.5px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.5; }
+  .tip-box-container { margin-bottom: 1.25rem; position: relative; display: inline-block; }
+  .tip-box-toggle { font-size: 12px; color: var(--teal); font-family: var(--mono); cursor: pointer; text-decoration: underline; text-decoration-style: dotted; }
+  .tip-box { display: none; background: var(--page); border: 0.5px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; color: var(--text-muted); line-height: 1.5; position: absolute; z-index: 10; top: 100%; left: 0; min-width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 8px; }
   .tip-box strong { color: var(--text); font-weight: 500; }
+  .tip-box-container:hover .tip-box { display: block; }
 
   textarea { width: 100%; min-height: 140px; border: 0.5px solid var(--border-med); border-radius: 8px; padding: 0.875rem 1rem; font-family: var(--sans); font-size: 15px; line-height: 1.6; color: var(--text); background: var(--surface); resize: vertical; transition: border-color 0.15s; }
   textarea:focus { outline: none; border-color: var(--teal); }
@@ -150,13 +153,34 @@
   <div class="key-screen card">
     <div class="lock-icon" style="text-align:center;font-size:28px;margin-bottom:1rem">🔑</div>
     <h2>Enter your Anthropic API key</h2>
-    <p>This app uses the Claude API to evaluate your answers. Your key is stored in memory only and never sent anywhere except directly to Anthropic.</p>
+    <p>This app uses the Claude API to generate questions and evaluate your answers. Your key is stored in memory only and never sent anywhere except directly to Anthropic.</p>
     <label style="font-size:12px;font-family:var(--mono);color:var(--text-faint);letter-spacing:0.06em;display:block;margin-bottom:6px">API KEY</label>
     <input type="password" id="api-key-input" placeholder="sk-ant-api03-…" />
     <div class="error-msg" id="key-error">Please enter a valid Anthropic API key (starts with sk-ant-)</div>
-    <p class="key-note">Don't have a key? Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>. Usage is pay-as-you-go; each interview costs roughly $0.02.</p>
+    <p class="key-note">Don't have a key? Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>. Usage is pay-as-you-go.</p>
     <div class="btn-row" style="justify-content:center;margin-top:1.25rem">
-      <button class="btn primary btn-lg" onclick="saveKey()">Start interview →</button>
+      <button class="btn primary btn-lg" onclick="saveKey()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── JD INPUT SCREEN ── -->
+<div id="screen-jd" class="app" style="display:none">
+  <div class="card">
+    <h2 style="font-family:var(--serif);font-size:28px;font-weight:400;margin-bottom:0.5rem">Paste your Job Description</h2>
+    <p style="font-size:14px;color:var(--text-muted);margin-bottom:1.5rem">We'll use Claude to analyze the JD and generate a custom, realistic interview tailored exactly to the role requirements.</p>
+
+    <label style="font-size:12px;font-family:var(--mono);color:var(--text-faint);letter-spacing:0.06em;display:block;margin-bottom:6px">JOB DESCRIPTION</label>
+    <textarea id="jd-input" placeholder="Paste the full job description here..." style="min-height: 240px; margin-bottom: 0.5rem;"></textarea>
+
+    <div id="jd-loading" style="display:none; margin-top:1rem; align-items:center; gap:12px;">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+      <span style="font-size:14px;color:var(--text-muted)">Analyzing JD and generating your custom interview... (this may take up to 20 seconds)</span>
+    </div>
+    <div class="error-msg" id="jd-error" style="margin-top:0.5rem; font-size:14px;"></div>
+
+    <div class="btn-row" style="justify-content:flex-end;margin-top:1rem">
+      <button class="btn primary btn-lg" id="generate-btn" onclick="generateInterview()">Generate Interview →</button>
     </div>
   </div>
 </div>
@@ -209,11 +233,16 @@
       <div class="progress-bar" id="progress"></div>
       <div class="card" id="question-card">
         <div class="q-meta">
-          <span class="q-label" id="q-label">QUESTION 1 OF 5</span>
-          <span class="q-badge" id="q-category">TECHNICAL</span>
+          <span class="q-label" id="q-label">QUESTION 1 OF X</span>
+          <span class="q-badge" id="q-category">CATEGORY</span>
         </div>
         <p class="q-text" id="q-text"></p>
-        <div class="tip-box" id="q-tip"></div>
+
+        <div class="tip-box-container">
+          <span class="tip-box-toggle">Hover for hints</span>
+          <div class="tip-box" id="q-tip"></div>
+        </div>
+
         <textarea id="answer-input" placeholder="Type your answer here…" oninput="updateCount()"></textarea>
         <div class="char-count"><span id="char-count">0</span> words</div>
         <div class="btn-row">
@@ -245,36 +274,124 @@
 
 <script>
   let API_KEY = '';
-
-  const QUESTIONS = [
-    {
-      category: "TECHNICAL", badge: "Technical Depth",
-      text: "Walk us through how you would design and implement a Python-based ETL pipeline that ingests assay data from the Benchling API and loads it into BigQuery. What libraries, data modeling decisions, and testing strategies would you apply to ensure the pipeline is production-grade and maintainable?",
-      tip: "<strong>Look for:</strong> airflow / prefect orchestration, pydantic for validation, dbt or raw SQL for transforms, pytest + Great Expectations for testing, incremental loads."
-    },
-    {
-      category: "DOMAIN", badge: "Domain Knowledge",
-      text: "Describe your hands-on experience with laboratory informatics platforms — specifically CDD Vault, Titian Mosaic, or Benchling ELN. How have you integrated these systems into a broader data infrastructure, and what were the most challenging aspects of working with their APIs or data models?",
-      tip: "<strong>Look for:</strong> knowledge of SMILES/compound structures in CDD, sample tracking in Mosaic, Benchling entity schema, rate-limiting challenges, chemical data types."
-    },
-    {
-      category: "SYSTEM DESIGN", badge: "Architecture",
-      text: "Calico needs a seamless data handoff from the Machine Learning team → Protein Sciences → Assay Technologies to accelerate the drug discovery feedback loop. Design this data flow architecture end-to-end. What data contracts, orchestration patterns, messaging systems, or APIs would you introduce?",
-      tip: "<strong>Look for:</strong> schema registries, event-driven vs polling, GCP Pub/Sub or Dataflow, data contracts, observability, handling schema evolution."
-    },
-    {
-      category: "BEHAVIORAL", badge: "Leadership",
-      text: "As the founding member of the Drug Discovery Data Engineering group, you'll be building standards from scratch and eventually mentoring future hires. Tell me about a time you established engineering practices on a new or under-structured team. How did you balance hands-on delivery with setting long-term standards?",
-      tip: "<strong>STAR format:</strong> Situation → Task → Action → Result. Highlight IaC, code review culture, documentation, or CI/CD practices you introduced."
-    },
-    {
-      category: "CULTURE FIT", badge: "Motivation",
-      text: "Calico is an Alphabet-backed company with a unique mission: understanding and combating human aging through science. What draws you to the intersection of data engineering and drug discovery specifically? And given you'd be the founding member of this group, what would your first 90 days look like?",
-      tip: "<strong>Look for:</strong> genuine scientific curiosity, specific mention of aging/longevity interest, concrete 90-day priorities (listening tour, quick wins, process mapping)."
-    }
-  ];
-
+  let QUESTIONS = [];
+  let JOB_INFO = {};
   let currentQ = 0, scores = [], feedbacks = [], isLoading = false;
+
+  async function generateInterview() {
+    const jd = document.getElementById('jd-input').value.trim();
+    if (jd.length < 50) {
+      document.getElementById('jd-error').textContent = 'Please paste a longer job description.';
+      document.getElementById('jd-error').style.display = 'block';
+      return;
+    }
+    document.getElementById('jd-error').style.display = 'none';
+    document.getElementById('jd-loading').style.display = 'flex';
+    document.getElementById('generate-btn').disabled = true;
+
+    const prompt = `You are an expert technical recruiter and hiring manager. Your task is to analyze the following job description and generate a highly realistic, tailored interview consisting of multiple distinct questions across various dimensions (e.g., Technical, System Design, Behavioral, Domain Knowledge, Culture Fit, etc.). The number of questions and dimensions should be dynamically determined based on the JD (between 4 and 6 questions).
+
+Job Description:
+${jd}
+
+Return ONLY a JSON object with this exact structure — no markdown formatting, no code blocks (like \`\`\`json), just the raw JSON:
+{
+  "company_name": "Name of the company (or 'Unknown Company' if not found)",
+  "job_title": "The exact job title",
+  "location_subtitle": "A short subtitle including department, location, and role type (e.g., 'Data Engineering · San Francisco, CA · Full-time')",
+  "key_requirements": ["Skill 1", "Skill 2", "Skill 3", "Requirement 1", "Requirement 2", "...up to 12 total chips max"],
+  "questions": [
+    {
+      "category": "CATEGORY_NAME_IN_CAPS",
+      "badge": "Short badge name (e.g., 'Technical Depth', 'Architecture')",
+      "text": "The full interview question text.",
+      "tip": "<strong>Look for:</strong> Specific things the candidate should mention to get a good score."
+    }
+  ]
+}`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-allow-browser': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 2000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+
+      const raw = data.content.map(b => b.text||'').join('');
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch(e) {
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (match) parsed = JSON.parse(match[0]);
+        else throw new Error("Could not parse JSON response from Claude.");
+      }
+
+      JOB_INFO = {
+        company_name: parsed.company_name,
+        job_title: parsed.job_title,
+        location_subtitle: parsed.location_subtitle,
+        key_requirements: parsed.key_requirements
+      };
+      QUESTIONS = parsed.questions;
+
+      // Now populate the main app with this dynamic data
+      populateMainApp();
+
+      document.getElementById('screen-jd').style.display = 'none';
+      document.getElementById('screen-app').style.display = 'block';
+    } catch(e) {
+      document.getElementById('jd-error').textContent = `Error: ${e.message}`;
+      document.getElementById('jd-error').style.display = 'block';
+    } finally {
+      document.getElementById('jd-loading').style.display = 'none';
+      document.getElementById('generate-btn').disabled = false;
+    }
+  }
+
+  function populateMainApp() {
+    // Update Header
+    document.querySelector('.company-tag').innerHTML = `<span class="dot"></span> ${JOB_INFO.company_name.toUpperCase()}`;
+    document.querySelector('.header h1').innerHTML = `Mock Interview: <em>${JOB_INFO.job_title}</em>`;
+    document.querySelector('.subtitle').textContent = JOB_INFO.location_subtitle;
+    document.title = `${JOB_INFO.company_name} Mock Interview — ${JOB_INFO.job_title}`;
+
+    // Update JD Chips
+    const chipsContainer = document.querySelector('.jd-chips');
+    chipsContainer.innerHTML = '';
+    JOB_INFO.key_requirements.forEach((req, idx) => {
+      // Color the first few chips green, the rest normal
+      const cls = idx < 6 ? 'chip green' : 'chip';
+      chipsContainer.innerHTML += `<span class="${cls}">${req}</span>`;
+    });
+
+    // Update Start Hero structure list
+    document.querySelector('.start-hero .big-num').textContent = QUESTIONS.length;
+    document.querySelector('.start-hero p').textContent = `Questions across ${QUESTIONS.length} dimensions`;
+    document.querySelector('.start-hero p:nth-of-type(2)').textContent = `AI-powered feedback tailored to the ${JOB_INFO.company_name} JD after each answer.`;
+
+    const structList = document.querySelector('.structure-list');
+    structList.innerHTML = QUESTIONS.map((q, i) => `
+      <div class="struct-item" ${i === QUESTIONS.length - 1 ? 'style="border-bottom:none"' : ''}>
+        <div class="struct-num">${i + 1}</div>
+        <div>
+          <div class="struct-cat">${q.badge}</div>
+          <div class="struct-desc">${q.category}</div>
+        </div>
+      </div>
+    `).join('');
+  }
 
   function saveKey() {
     const val = document.getElementById('api-key-input').value.trim();
@@ -284,7 +401,7 @@
     }
     API_KEY = val;
     document.getElementById('screen-key').style.display = 'none';
-    document.getElementById('screen-app').style.display = 'block';
+    document.getElementById('screen-jd').style.display = 'block';
   }
 
   document.getElementById('api-key-input').addEventListener('keydown', e => {
@@ -293,12 +410,13 @@
 
   function renderProgress() {
     const bar = document.getElementById('progress');
-    const labels = ['Tech','Domain','Design','Leadership','Culture'];
     bar.innerHTML = QUESTIONS.map((q, i) => {
       const cls = i < currentQ ? 'done' : i === currentQ ? 'active' : '';
+      // Use the first word of the badge as the progress label
+      const shortLabel = q.badge.split(' ')[0];
       return `<div class="prog-step ${cls}">
         <div class="prog-dot">${i < currentQ ? '✓' : i+1}</div>
-        <div class="prog-label">${labels[i]}</div>
+        <div class="prog-label">${shortLabel}</div>
       </div>`;
     }).join('');
   }
@@ -349,14 +467,14 @@
     </div>`;
 
     const q = QUESTIONS[currentQ];
-    const prompt = `You are a senior hiring manager at Calico Life Sciences interviewing for Senior Data Engineer, Drug Discovery Data Engineering. This is a founding role requiring 5+ years pharma informatics, Python/GCP/BigQuery, FastAPI, React, Kubernetes, Terraform, and hands-on experience with CDD Vault, Benchling ELN, and Titian Mosaic.
+    const prompt = `You are a senior hiring manager at ${JOB_INFO.company_name} interviewing for a ${JOB_INFO.job_title}. The role requirements include: ${JOB_INFO.key_requirements.join(', ')}.
 
 Category: ${q.category}
 Question: ${q.text}
 Candidate answer: ${answer}
 
 Return ONLY a JSON object with these exact fields — no markdown, no preamble:
-{"score":<int 1-10>,"summary":"<2-sentence assessment>","strengths":["<s1>","<s2>"],"improvements":["<i1>","<i2>"],"calico_fit":"<1 sentence on fit with Calico drug discovery mission>"}`;
+{"score":<int 1-10>,"summary":"<2-sentence assessment>","strengths":["<s1>","<s2>"],"improvements":["<i1>","<i2>"],"culture_fit":"<1 sentence on fit with ${JOB_INFO.company_name} based on the answer>"}`;
 
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -380,7 +498,7 @@ Return ONLY a JSON object with these exact fields — no markdown, no preamble:
       try { fb = JSON.parse(raw); }
       catch(e) {
         const match = raw.match(/\{[\s\S]*\}/);
-        fb = match ? JSON.parse(match[0]) : { score:5, summary:"Could not parse feedback. Try again.", strengths:[], improvements:[], calico_fit:"" };
+        fb = match ? JSON.parse(match[0]) : { score:5, summary:"Could not parse feedback. Try again.", strengths:[], improvements:[], culture_fit:"" };
       }
       scores.push(fb.score);
       feedbacks.push(fb);
@@ -406,7 +524,7 @@ Return ONLY a JSON object with these exact fields — no markdown, no preamble:
           <div class="feedback-section"><div class="fb-label">SUMMARY</div><div class="fb-text">${fb.summary}</div></div>
           ${strengths ? `<div class="feedback-section"><div class="fb-label">STRENGTHS</div>${strengths}</div>` : ''}
           ${improvements ? `<div class="feedback-section"><div class="fb-label">AREAS TO IMPROVE</div>${improvements}</div>` : ''}
-          ${fb.calico_fit ? `<div class="feedback-section"><div class="fb-label">CALICO FIT</div><div class="fb-text" style="font-style:italic">${fb.calico_fit}</div></div>` : ''}
+          ${fb.culture_fit ? `<div class="feedback-section"><div class="fb-label">CULTURE FIT</div><div class="fb-text" style="font-style:italic">${fb.culture_fit}</div></div>` : ''}
         </div>
       </div>
       <div class="btn-row">
@@ -427,11 +545,12 @@ Return ONLY a JSON object with these exact fields — no markdown, no preamble:
     document.getElementById('questions-done').textContent = valid.length + '/' + QUESTIONS.length;
     const n = parseFloat(avg);
     document.getElementById('overall-grade').textContent = n >= 8 ? 'STRONG HIRE' : n >= 6 ? 'LIKELY HIRE' : n >= 4 ? 'BORDERLINE' : 'NEEDS WORK';
-    const labels = ['Technical','Domain','System Design','Leadership','Culture'];
+
     document.getElementById('scores-breakdown').innerHTML = scores.map((s, i) => {
       const pct = s ? (s/10*100) : 0;
+      const label = QUESTIONS[i] ? QUESTIONS[i].badge.split(' ')[0] : 'Q'+(i+1);
       return `<div class="score-row">
-        <span style="font-size:12px;font-family:var(--mono);color:var(--text-muted);width:90px;flex-shrink:0">${labels[i]}</span>
+        <span style="font-size:12px;font-family:var(--mono);color:var(--text-muted);width:90px;flex-shrink:0">${label}</span>
         <div class="score-bar-wrap"><div class="score-bar" style="width:${pct}%"></div></div>
         <span style="font-size:12px;font-family:var(--mono);color:${s>=8?'var(--teal)':s>=5?'#BA7517':'#A32D2D'};width:30px;text-align:right">${s !== null ? s+'/10' : 'skip'}</span>
       </div>`;
