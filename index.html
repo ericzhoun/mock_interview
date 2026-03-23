@@ -77,8 +77,9 @@
   .tip-box-container { margin-bottom: 1.25rem; position: relative; display: inline-block; }
   .tip-box-toggle { font-size: 12px; color: var(--teal); font-family: var(--mono); cursor: pointer; text-decoration: underline; text-decoration-style: dotted; }
   .tip-box { display: none; background: var(--page); border: 0.5px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; font-size: 12px; color: var(--text-muted); line-height: 1.5; position: absolute; z-index: 10; top: 100%; left: 0; min-width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 8px; }
+  .tip-box::before { content: ''; position: absolute; top: -10px; left: 0; right: 0; height: 10px; }
   .tip-box strong { color: var(--text); font-weight: 500; }
-  .tip-box-container:hover .tip-box { display: block; }
+  .tip-box-container:hover .tip-box, .tip-box-container.open .tip-box { display: block; }
 
   textarea { width: 100%; min-height: 140px; border: 0.5px solid var(--border-med); border-radius: 8px; padding: 0.875rem 1rem; font-family: var(--sans); font-size: 15px; line-height: 1.6; color: var(--text); background: var(--surface); resize: vertical; transition: border-color 0.15s; }
   textarea:focus { outline: none; border-color: var(--teal); }
@@ -225,7 +226,10 @@
           <div class="struct-item"><div class="struct-num">4</div><div><div class="struct-cat">Behavioral / leadership</div><div class="struct-desc">Founding member, mentorship, cross-functional bridge</div></div></div>
           <div class="struct-item" style="border-bottom:none"><div class="struct-num">5</div><div><div class="struct-cat">Motivation & culture</div><div class="struct-desc">Calico mission, autonomy, 90-day vision</div></div></div>
         </div>
-        <button class="btn primary btn-lg" onclick="startInterview()">Begin Interview →</button>
+        <div class="btn-row" style="justify-content:center;margin-top:1.5rem">
+          <button class="btn btn-lg" onclick="exportQuestions()">Export Q&A</button>
+          <button class="btn primary btn-lg" onclick="startInterview()">Begin Interview →</button>
+        </div>
       </div>
     </div>
 
@@ -238,8 +242,8 @@
         </div>
         <p class="q-text" id="q-text"></p>
 
-        <div class="tip-box-container">
-          <span class="tip-box-toggle">Hover for hints</span>
+        <div class="tip-box-container" onclick="this.classList.toggle('open')">
+          <span class="tip-box-toggle">Hover or click for hints</span>
           <div class="tip-box" id="q-tip"></div>
         </div>
 
@@ -317,10 +321,11 @@ Return ONLY a JSON object with this exact structure — no markdown formatting, 
           'Content-Type': 'application/json',
           'x-api-key': API_KEY,
           'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-allow-browser': 'true'
+          'anthropic-dangerous-allow-browser': 'true',
+          'anthropic-dangerous-direct-browser-access': 'true'
         },
         body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
+          model: 'claude-sonnet-4-6',
           max_tokens: 2000,
           messages: [{ role: 'user', content: prompt }]
         })
@@ -483,10 +488,11 @@ Return ONLY a JSON object with these exact fields — no markdown, no preamble:
           'Content-Type': 'application/json',
           'x-api-key': API_KEY,
           'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-allow-browser': 'true'
+          'anthropic-dangerous-allow-browser': 'true',
+          'anthropic-dangerous-direct-browser-access': 'true'
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 600,
           messages: [{ role: 'user', content: prompt }]
         })
@@ -561,6 +567,34 @@ Return ONLY a JSON object with these exact fields — no markdown, no preamble:
     currentQ = 0; scores = []; feedbacks = []; isLoading = false;
     document.getElementById('screen-results').style.display = 'none';
     document.getElementById('screen-start').style.display = 'block';
+  }
+
+  function exportQuestions() {
+    if (!QUESTIONS || QUESTIONS.length === 0) return;
+    
+    let text = `Mock Interview: ${JOB_INFO.job_title} at ${JOB_INFO.company_name}\n`;
+    text += `Location/Type: ${JOB_INFO.location_subtitle}\n\n`;
+    text += `==================================================\n\n`;
+    
+    QUESTIONS.forEach((q, i) => {
+      text += `QUESTION ${i + 1} [${q.badge}]:\n${q.text}\n\n`;
+      
+      // Strip HTML from tip/hint
+      const temp = document.createElement('div');
+      temp.innerHTML = q.tip;
+      const cleanTip = (temp.textContent || temp.innerText).trim();
+      
+      text += `HINT:\n${cleanTip}\n\n`;
+      text += `--------------------------------------------------\n\n`;
+    });
+    
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'mock_interview_questions.txt';
+    a.click();
+    URL.revokeObjectURL(url);
   }
 </script>
 </body>
